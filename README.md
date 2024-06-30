@@ -1,26 +1,24 @@
-![avatar](cyclops.ico)**Cyclops 是一款具有 XSS 检测功能的浏览器**    
+![avatar](cyclops.ico)**Cyclops is a web browser with XSS detection feature**   
 
-📝[Englist Document](https://github.com/v8blink/Chromium-based-XSS-Taint-Tracking/blob/main/README-en.md)   
+📝[中文说明](https://github.com/v8blink/Chromium-based-XSS-Taint-Tracking/blob/main/README.md)   
 
-Cyclops 暂时不开源，直接下载构建的二进制文件即可 [下载地址](https://github.com/v8blink/Chromium-based-XSS-Taint-Tracking/releases)  
+The Cyclops's binary code can be directly [downloaded here](https://github.com/v8blink/Chromium-based-XSS-Taint-Tracking/releases); It's source code is not provided now.    
 
-现在仅有 Win 10 版，Linux 和 Mac 版即将发布。   
+Cyclops is open evaluation for Microsoft Windows 10; Versions for Linux and Mac will be published soon.
 
+# User Manual
+Cyclops is still in development. If any problem occurs, please contact us.  
+When using Cyclops, arg "**--no-sandbox**" is needed. If any suspicious XSS is detected, a log file named "SourceSink.txt" will be generated in running directory (Default:C:\Users\UserName\AppData\Local\Chromium\Application\97.0.4684.0\). The format of SourceSink.txt will be introduced below.  
 
-# 使用说明
-Cyclops 仍处于开发阶段，有问题及时沟通。  
-使用 Cyclops 访问目标网站时需要 **--no-sandbox** 参数，发现可疑 XSS 时，会在当前运行目录下生成 SourceSink.txt文件（默认位置：C:\Users\UserName\AppData\Local\Chromium\Application\97.0.4684.0\），[SourceSink格式说明见下文](#sourcesink-文件格式说明)。   
+[DEMO video 1](https://www.zhihu.com/zvideo/1505471657166282752)，[DEMO video 2](https://www.zhihu.com/zvideo/1505847898797969409)          
+**Note** Cyclops updates frequently so newly-developed features may not be included in the videos above.
 
-[使用演示视频1](https://www.zhihu.com/zvideo/1505471657166282752) ，[使用演示视频2](https://www.zhihu.com/zvideo/1505847898797969409)      
-**注意** 软件版本更新较快，新功能不一定包括在视频中  
-
-# 更新计划    
-按优先级排序：  
-**0.sink 信息必须要包含 id**  
-例如：“Sink:HTMLLIElement.className”，没有 id 时会显示 Element 类型，有 id 时一定会显示 id。正功能在完善中...  
-
-**1.更新 source 和 sink**  
-目前的 source 和 sink 如下：
+# To do list   
+Ordered by priorities  
+**0. id field must be included in sink info.**    
+E.g. "Sink:HTMLLIElement.className" without id field will display as Element type, and it must display its id if it is not null. This feature is in progress...
+**1.source and sink**
+Currently, the supported sources and sinks are as follows:  
 |source|sink|
 |----|----|
 |document.baseURI|element.innerHTML  
@@ -41,35 +39,34 @@ Cyclops 仍处于开发阶段，有问题及时沟通。
 |element.namespaceURI|
 |element.src|
 
-大家多多提供修改意见，尽早完善 Cyclops。  
+**2.crash error fix**    
+Our test cases only cover limited scenarios, so we will be appreciated if you raise an issue when encountering a crash.   
+**3.optimization for SourceSink.txt**   
+The current format of SourceSink.txt is temporary. We intend to output it as JSON or redirect it to a specific port. But limited by our finite ability and the complexity of Chromium's architecture, we have not solve the crash problem yet.   
+We are trying to implement our thoughts.   
 
-**2.修复 crash 问题**  
-我的测试范围有限，大家发现 crash 时请提 issue 或微信：qq9123013，感谢。   
-**3.优化 SourceSink.txt 格式**    
-目前这样的 SourceSink.txt 是临时版本。我的本意是采用 JSON 格式输出，或转发 SourceSink 结果到指定端口。但 Chromium 源码耦合度很高，源码又十分复杂，我的改动稍有差池，crash满天飞。   
-我正在努力实现上述想法。  
-
-# SourceSink 文件格式说明  
-文件中每行是一条 sink 记录，由逗号分为三部分。第一部分是 sink 信息；第二部分 910226 是测试标记；第三部分是数据来源，其中 每对 [] 是一个单元，单元可以嵌套，从里向外看。举例如下：  
+# Description of SourceSink.txt  
+Each line of the file is a record of sink, with three parts divided by comma. The first part is sink info; The second part is a test ID; The third part is the source of the data, with embeddable units enclosed with [].
+Here is an example listed below:
 >[Sink:alert:qerwr , 910226, [ENURI:[Substring:[Location.search]]]]
 
- 
-Sink:alert:qerwr  冒号分隔，数据的终点是 alert 方法，进入 alert 的数据是 "qerwr"；  
-910226, 测试标记；  
-[ENURI:[Substring:[Location.search]]] 说明 alert 数据来源。首先 x = location.search，然后是 y=x.substring()，z=EncodeURI(y)，最后是 alert(z); 
+
+"Sink:alert:qerwr", divided by colon, with "alert" as its destination method name, and its parameter is string "qerwr";  
+910226 represents to a test ID;    
+[ENURI:[Substring:[Location.search]]] describes the data source of the parameter of method "alert". alert(EncodeURI(location.search.substring()));
 
 >[Sink:HTMLLIElement.className ,910226, [Trim:[ADD:[ADD:[ADD:,[HTMLLIElement.className]],],]]]
-
+  
+Sink:HTMLLIElement.className  divided by colon, represents the termination of the data is a className property of an Element.    
+910226 represents to a test ID;    
+[Trim:[ADD:[ADD:[ADD:,[HTMLLIElement.className]],],]]] ADD means operator +; If an operand does not contain tainted info, it will be an empty string "".
  
-Sink:HTMLLIElement.className  冒号分隔，数据的终点是某个 Element 的 className属性；  
-910226, 测试标记；   
-[Trim:[ADD:[ADD:[ADD:,[HTMLLIElement.className]],],]]]， 首先是x= Element.className，然后 x 参与了加法(ADD)运算，注意：[ADD:,x]，正常的加法需要两个操作数，但这里只有一个右操作，说明它的左操作数没有污染信息。Trim 代表 Trim 方法。  
-**注意** 测试标记 910226 和数据流来源一定同时存在，否则是 bug，请通知我，谢谢。    
-上面两个例子中的 "Trim" 和 "ENURI" 是 Sink 数据流中使用的简写标记，下表给出所有的简写标记。
+**Note** Test ID 910226 must be with data source. A test id without data source or data source without test id is a bug. Bug report around this issue will be appreciated.
+"Trim" and "ENURI" in the examples above are abbreviation marks used in Sink data flow. Full abbreivation mark table is listed below.
 
-|标记|JavaScript 方法|示例|备注|
+|Mark|JavaScript function|Direction|Illustration|
 |----|----|----|----|
-|A|string.anchor|[A:strX]|`<a name=undefined>strX</a>`，使用字符串strX创建A标签|
+|A|string.anchor|[A:strX]|`<a name=undefined>strX</a>`|
 |B|string.big|[B:strX]|`<big>strX</big>`||
 |Blink|string.blink|[Blink:strX]|`<blink>strX</blink>`||
 |Bold|string.bold|[Blod:strX]|`<b>strX</b>`||
@@ -91,29 +88,20 @@ Sink:HTMLLIElement.className  冒号分隔，数据的终点是某个 Element �
 |ENURIC|encodeURIComponent|
 |Escape|escape|
 |UnEscape|Unescape|
-|Geval|eval方法|
-|Deval|eval方法|
-|ADD|加法|[ADD:strX,strY]|缺少的操作数即不存在污染信息|
-|Pad:,E=|string.padEnd|[Pad:strx,E=strY]|b=strX.padend(num,strY), b 的值与 strX 不同时，产生此记录。| 
-|Rep:rec=,s=|strin.replace|[Rep:rec=hello,s=world]|strX.replace("hello","world"), 查找字符串内的"hello"并替换为"world"|  
-|Repeat|string.repeat|[Repeat:strX]|重复次数暂时没记录，后续更新|
-|Slice|string.slice|[Slice:strX]|b=strX.slice(i,j)，b的长度大于零且小于strX长度时，产生此记录|
-|Substr|string.substr|[Substr:strX]|参照上一条|
-|Trim|string.trim|不区分trimStart、trimEnd、trimLeft、trimRight  
-|Concat|string.concat|[Concat:strX,strY]或[Concat:strX,strY,strZ...]|b=strX.concat(strY),b=strX.concat(strY,strZ...)      
-|gAttr|element.getAttribute()|[gAttr:name:value]|例如`<input id=name value='huidou'/>`，input.getAttribute('value') 会产生此记录,说明此条数据来自某个 Element 的 value 属性，该标签 id 是 name。  
-|sAttr|element.setAttribute()|[sAttr:name:value]|同上例，说明向某 Element 的 value 属性写值，其 id 是 name。
-|F:P=,B=|Function()构造方法|[F:P=p1,p2,B=evil]|P 表示参数，p1，p2 是两个参数的数据源；B 表示函数主体的数据来源。P 或 B 中的一个项是攻击者可控时产生此条记录。
+|Geval|eval method|
+|Deval|eval method|
+|ADD|addition|[ADD:strX,strY]|missing operand(s) means no tainted info|
+|Pad:,E=|string.padEnd|[Pad:strx,E=strY]|b=strX.padend(num,strY), it will be recorded if the value of b differs from that of strX|  
+|Rep:rec=,s=|strin.replace|[Rep:rec=hello,s=world]|strX.replace("hello","world"), find the "hello" substring from strX and replace it with substring "world"|  
+|Repeat|string.repeat|[Repeat:strX]|Repeat times are currently not recorded. It will be updated soon|
+|Slice|string.slice|[Slice:strX]|b=strX.slice(i,j)，when the length of b is greater than zero and less than strX, it will be recorded|
+|Substr|string.substr|[Substr:strX]|refer to the above example| 
+|Trim|string.trim|Does not distinguish trimStart, trimEnd, trimLeft and trimRight   
+|Concat|string.concat|[Concat:strX,strY] or [Concat:strX,strY,strZ...]|b=strX.concat(strY),b=strX.concat(strY,strZ...)       
+|gAttr|element.getAttribute()|[gAttr:name:value]|e.g. `<input id=name value='huidou'/>`, method "input.getAttribute('value')" generates the record, represents that the data comes from a "value" property of an Element, whose id is "name"。
+|sAttr|element.setAttribute()|[sAttr:name:value]|same as the above example, represents to a write action to the "value" property of an Element, whose "id" is name
+|F:P=,B=|Function() constructor|[F:P=p1,p2,B=evil]|P represents parameter, p1 and p2 represents data source of the two parameters;B represents the data source of the function body. Generates this record if P or B is attacker-controlled.   
 
-**注意**如 location.href、settimeout、alert 等没有使用简写标记，而是使用全称表示的方法，没在表格中列出。  
-
-
-# 🍺赞赏    
-如果对你有帮助，请打赏豆豆以资鼓励🥂   
- <img src="https://github.com/v8blink/Chromium-based-XSS-Taint-Tracking/blob/main/Donate.jpg" width = "300" height = "300" alt="图片名称" align=center />     
-
-
-# 免责声明
-
-如您在使用本工具的过程中存在任何非法行为，您将自行承担所有后果，本工具所有开发者和所有贡献者不承担任何法律及连带责任。
-除非您已充分阅读、完全理解并接受本协议所有条款，否则，请您不要安装并使用本工具。
+**Note** common properties/methods such as location.href, settimeout and alert are not listed above because they just simply use their full names.  
+# Disclaimer  
+The Cyclops can only be used in the safety construction of enterprises with sufficient legal authorization. During the use of the Cyclops, you should ensure that all your actions comply with local laws and regulations. If you have any illegal behavior in the process of using this tool, you will bear all the consequences yourself, and all developers and all contributors of this tool will not bear any legal and joint liability.
